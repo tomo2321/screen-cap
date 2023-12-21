@@ -12,7 +12,7 @@ def main(
     save_dir,
     total_page_num: int = MAX_PAGE_NUM,
     next_page_direction: str = 'right',
-    verbose: bool =True,
+    verbose: bool = True,
 ) -> None:
 
     if verbose:
