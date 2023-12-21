@@ -26,7 +26,8 @@ def main(
         save_filepath = f"{save_dir}/{i:04d}.png"
         if verbose:
             print(f"save: {save_filepath}")
-        pag.screenshot(save_filepath)
+        screenshot = pag.screenshot()
+        screenshot.save(save_filepath)
         pag.hotkey(next_page_direction)
 
 
