@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 
 import pyautogui as pag
 
@@ -33,7 +34,7 @@ def main(
 
 if __name__ == '__main__':
 
-    save_dir = 'figs/title'
+    save_dir = f"figs/{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}"
     total_page_num = 123
 
     main(save_dir, total_page_num)
