@@ -72,6 +72,62 @@ class TestMarginDetector:
         # Cleanup
         Path(tmp.name).unlink(missing_ok=True)
 
+    @pytest.fixture
+    def test_image_vertical_margins(self):
+        """
+        Create a test image with vertical margins
+        Total size: 512x512
+        Top margin: 100px (white)
+        Bottom margin: 100px (white)
+        Content: 512x312 (gray)
+        """
+        width = 512
+        height = 512
+        top_margin = 100
+        bottom_margin = 100
+
+        # Create white background (255)
+        image = np.ones((height, width, 3), dtype=np.uint8) * 255
+
+        # Fill content area with gray (128)
+        image[top_margin:height-bottom_margin, :] = 128
+
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            cv2.imwrite(tmp.name, image)
+            yield tmp.name, top_margin, bottom_margin, width, height
+
+        # Cleanup
+        Path(tmp.name).unlink(missing_ok=True)
+
+    @pytest.fixture
+    def test_image_all_margins(self):
+        """
+        Create a test image with both horizontal and vertical margins
+        Total size: 512x512
+        Left/Right margin: 100px (white)
+        Top/Bottom margin: 100px (white)
+        Content: 312x312 (gray)
+        """
+        width = 512
+        height = 512
+        h_margin = 100  # horizontal margin
+        v_margin = 100  # vertical margin
+
+        # Create white background (255)
+        image = np.ones((height, width, 3), dtype=np.uint8) * 255
+
+        # Fill content area with gray (128)
+        image[v_margin:height-v_margin, h_margin:width-h_margin] = 128
+
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            cv2.imwrite(tmp.name, image)
+            yield tmp.name, h_margin, v_margin, width, height
+
+        # Cleanup
+        Path(tmp.name).unlink(missing_ok=True)
+
     def test_enable_right_false_symmetric_margins(self, test_image_symmetric):
         """
         Test with enable_right=False on symmetric margins
@@ -248,3 +304,143 @@ class TestMarginDetector:
         boundary = detector.find_boundary_right(click_x, click_y)
 
         assert boundary == margin + 1, f"Expected boundary at {margin + 1}, got {boundary}"
+
+    def test_vertical_margin_detection(self, test_image_vertical_margins):
+        """
+        Test vertical margin detection with single click on content area
+        Should detect both top and bottom boundaries simultaneously
+        """
+        image_path, top_margin, bottom_margin, width, height = test_image_vertical_margins
+
+        detector = MarginDetector(image_path, enable_vertical=True)
+        detector.load_image()
+
+        # Click on content area (middle of content)
+        click_x, click_y = 256, 256
+
+        # Detect top boundary
+        top_boundary = detector.find_boundary_up_for_top(click_x, click_y)
+        assert top_boundary == top_margin + 1, \
+            f"Expected top boundary at {top_margin + 1}, got {top_boundary}"
+        detector.top_boundary = top_boundary
+
+        # Detect bottom boundary
+        bottom_boundary = detector.find_boundary_down_for_bottom(click_x, click_y)
+        expected_bottom = height - bottom_margin
+        assert bottom_boundary == expected_bottom, \
+            f"Expected bottom boundary at {expected_bottom}, got {bottom_boundary}"
+        detector.bottom_boundary = bottom_boundary
+
+        # Verify crop range
+        top = detector.top_boundary - 1
+        bottom = detector.bottom_boundary
+
+        assert top == top_margin, f"Expected top crop at {top_margin}, got {top}"
+        assert bottom == height - bottom_margin, \
+            f"Expected bottom crop at {height - bottom_margin}, got {bottom}"
+
+        # Verify cropped height
+        expected_height = height - top_margin - bottom_margin
+        cropped_height = bottom - top
+        assert cropped_height == expected_height, \
+            f"Expected cropped height {expected_height}, got {cropped_height}"
+
+    def test_combined_horizontal_vertical_margins(self, test_image_all_margins):
+        """
+        Test detection of both horizontal and vertical margins
+        """
+        image_path, h_margin, v_margin, width, height = test_image_all_margins
+
+        detector = MarginDetector(image_path, enable_right=False, enable_vertical=True)
+        detector.load_image()
+
+        # Detect left boundary (horizontal)
+        click_x_h, click_y_h = 50, 256
+        left_boundary = detector.find_boundary_right(click_x_h, click_y_h)
+        assert left_boundary == h_margin + 1, \
+            f"Expected left boundary at {h_margin + 1}, got {left_boundary}"
+        detector.left_boundary = left_boundary
+
+        # Detect vertical boundaries (single click on content)
+        click_x_v, click_y_v = 256, 256
+        top_boundary = detector.find_boundary_up_for_top(click_x_v, click_y_v)
+        bottom_boundary = detector.find_boundary_down_for_bottom(click_x_v, click_y_v)
+
+        assert top_boundary == v_margin + 1, \
+            f"Expected top boundary at {v_margin + 1}, got {top_boundary}"
+        assert bottom_boundary == height - v_margin, \
+            f"Expected bottom boundary at {height - v_margin}, got {bottom_boundary}"
+
+        detector.top_boundary = top_boundary
+        detector.bottom_boundary = bottom_boundary
+
+        # Verify horizontal crop
+        left = detector.left_boundary - 1
+        right = width - h_margin  # Symmetric application
+
+        # Verify vertical crop
+        top = detector.top_boundary - 1
+        bottom = detector.bottom_boundary
+
+        # Verify dimensions
+        expected_width = width - 2 * h_margin
+        expected_height = height - 2 * v_margin
+        cropped_width = right - left
+        cropped_height = bottom - top
+
+        assert cropped_width == expected_width, \
+            f"Expected cropped width {expected_width}, got {cropped_width}"
+        assert cropped_height == expected_height, \
+            f"Expected cropped height {expected_height}, got {cropped_height}"
+
+    def test_vertical_no_top_margin(self, test_image_vertical_margins):
+        """
+        Test vertical detection when clicking near the top (content starts at top)
+        """
+        image_path, top_margin, bottom_margin, width, height = test_image_vertical_margins
+
+        # Create image with no top margin
+        image = np.ones((height, width, 3), dtype=np.uint8) * 128  # All content
+        image[height-bottom_margin:, :] = 255  # Only bottom margin
+
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            cv2.imwrite(tmp.name, image)
+            detector = MarginDetector(tmp.name, enable_vertical=True)
+            detector.load_image()
+
+            # Click on content area
+            click_x, click_y = 256, 50
+
+            # Detect top boundary (should return 1 since no margin at top)
+            top_boundary = detector.find_boundary_up_for_top(click_x, click_y)
+            assert top_boundary == 1, \
+                f"Expected top boundary at 1 (no margin), got {top_boundary}"
+
+            # Cleanup
+            Path(tmp.name).unlink(missing_ok=True)
+
+    def test_vertical_no_bottom_margin(self, test_image_vertical_margins):
+        """
+        Test vertical detection when clicking near bottom (content extends to bottom)
+        """
+        image_path, top_margin, bottom_margin, width, height = test_image_vertical_margins
+
+        # Create image with no bottom margin
+        image = np.ones((height, width, 3), dtype=np.uint8) * 128  # All content
+        image[:top_margin, :] = 255  # Only top margin
+
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            cv2.imwrite(tmp.name, image)
+            detector = MarginDetector(tmp.name, enable_vertical=True)
+            detector.load_image()
+
+            # Click on content area
+            click_x, click_y = 256, 400
+
+            # Detect bottom boundary (should return height since no margin at bottom)
+            bottom_boundary = detector.find_boundary_down_for_bottom(click_x, click_y)
+            assert bottom_boundary == height, \
+                f"Expected bottom boundary at {height} (no margin), got {bottom_boundary}"
+
+            # Cleanup
+            Path(tmp.name).unlink(missing_ok=True)
