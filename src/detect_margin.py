@@ -16,25 +16,19 @@ For example, if pixel 1 is white, pixels 2-3 are black (content), and pixel 4 is
 
 Modes:
 - enable_right_click=False (default): Click left half to detect left boundary.
-  Right boundary is automatically detected from the mirrored position (symmetric to the click point
-  relative to the image center) at the same y-coordinate.
+  The same margin width from the left side is automatically applied to the right side.
 - enable_right_click=True: Click left half for left boundary, right half for right boundary.
   Manual control of both boundaries.
-- enable_same_margin=True: Apply the same margin width from left side to right side.
-  Cannot be used with --enable-right-click. If both flags are specified, --enable-right-click takes priority.
 
 Usage:
-    python detect_margin.py <image_path> [--enable-right-click | --enable-same-margin]
+    python detect_margin.py <image_path> [--enable-right-click]
 
 Examples:
-    # Automatic symmetric detection (default)
+    # Automatic detection with same margin width applied to right side (default)
     python detect_margin.py image.png
 
     # Manual control for asymmetric margins
     python detect_margin.py image.png --enable-right-click
-
-    # Apply same left margin width to right side
-    python detect_margin.py image.png --enable-same-margin
 
 How it works:
 1. Click on a margin area (white/background region)
@@ -60,28 +54,15 @@ class MarginDetector:
     Attributes:
         left_boundary (int): 1-indexed position of first content pixel (None if not detected)
         right_boundary (int): 1-indexed position of last content pixel (None if not detected)
-        enable_right_click (bool): If False, automatically detects right boundary from mirrored position
-                                   (symmetric to left click point relative to image center)
+        enable_right_click (bool): If False, automatically applies the same margin width from left side to right side
                                    If True, requires manual right-side click for right boundary
-        enable_same_margin (bool): If True, applies the same margin width from left side to right side.
-                                   Mutually exclusive with enable_right_click. If both are True,
-                                   enable_right_click takes priority and this flag is ignored.
-    
+
     Internal processing uses 0-indexed coordinates, but all user-facing values
     (display and boundary storage) use 1-indexed positions.
     """
-    def __init__(self, image_path, enable_right_click=False, enable_same_margin=False):
+    def __init__(self, image_path, enable_right_click=False):
         self.image_path = image_path
         self.enable_right_click = enable_right_click
-        
-        # If both flags are specified, prioritize enable_right_click
-        if enable_right_click and enable_same_margin:
-            print("Warning: Both --enable-right-click and --enable-same-margin specified.")
-            print("Prioritizing --enable-right-click. --enable-same-margin will be ignored.")
-            self.enable_same_margin = False
-        else:
-            self.enable_same_margin = enable_same_margin
-        
         self.image = None
         self.gray = None
         self.left_boundary = None
@@ -227,12 +208,11 @@ class MarginDetector:
 
         Cropping logic:
         - If right_boundary is set:
-          * With enable_same_margin=True (and enable_right=False): Overrides right boundary
-            with left margin width
-          * Otherwise: Uses detected right boundary directly
+          * With enable_right_click=False (default): Overrides right boundary
+            with left margin width from left side
+          * With enable_right_click=True: Uses detected right boundary directly
         - If only left_boundary is set:
-          * With enable_same_margin=True: Applies left margin width to right side
-          * With enable_right=False (default): Applies left margin width to right side
+          * With enable_right_click=False (default): Applies left margin width to right side
           * Otherwise: No cropping on right side
         - Otherwise: No cropping on respective side
 
@@ -252,19 +232,14 @@ class MarginDetector:
 
         # Determine right boundary
         if self.right_boundary:
-            # When enable_right_click is False and enable_same_margin is True, override right boundary
-            if not self.enable_right_click and self.enable_same_margin and self.left_boundary:
+            # When enable_right_click is False, override right boundary with left margin width
+            if not self.enable_right_click and self.left_boundary:
                 left_margin = self.left_boundary - 1
                 right = width - left_margin
-                print(f"Applying left margin width ({left_margin}px) to right side (--enable-same-margin)")
+                print(f"Applying left margin width ({left_margin}px) to right side")
             else:
                 # right_boundary is 1-indexed last pixel, so use it directly for slice end
                 right = self.right_boundary
-        elif self.enable_same_margin and self.left_boundary:
-            # Apply same margin width from left to right
-            left_margin = self.left_boundary - 1
-            right = width - left_margin
-            print(f"Applying left margin width ({left_margin}px) to right side (--enable-same-margin)")
         elif self.left_boundary and not self.enable_right_click:
             # When --enable-right is false, remove same width from right as left
             left_margin = self.left_boundary - 1
@@ -339,15 +314,10 @@ def main():
         action="store_true",
         help="Enable right half click processing"
     )
-    parser.add_argument(
-        "--enable-same-margin", "-s",
-        action="store_true",
-        help="Apply the same margin width from left side to right side"
-    )
 
     args = parser.parse_args()
 
-    detector = MarginDetector(args.image, args.enable_right_click, args.enable_same_margin)
+    detector = MarginDetector(args.image, args.enable_right_click)
     detector.run()
 
 
