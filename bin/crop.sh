@@ -6,10 +6,10 @@
 # then applies the detected crop boundaries to all images in the same directory.
 #
 # Usage:
-#   ./crop.sh [--enable-right-click|-c] <sample_image_path>
+#   ./crop.sh [--enable-right|-r] <sample_image_path>
 #
 # Arguments:
-#   --enable-right-click, -c: Enable right margin detection (optional)
+#   --enable-right, -r: Enable right margin detection (optional)
 #   sample_image_path: Path to a sample image for margin detection
 #
 # Output:
@@ -18,8 +18,8 @@
 #
 # Example:
 #   ./crop.sh ./figs/sample/page_001.png
-#   ./crop.sh --enable-right-click ./figs/sample/page_001.png
-#   ./crop.sh -c ./figs/sample/page_001.png
+#   ./crop.sh --enable-right ./figs/sample/page_001.png
+#   ./crop.sh -r ./figs/sample/page_001.png
 #
 
 set -e
@@ -28,8 +28,8 @@ set -e
 ENABLE_RIGHT_CLICK=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --enable-right-click|-c)
-            ENABLE_RIGHT_CLICK="--enable-right-click"
+        --enable-right|-r)
+            ENABLE_RIGHT_CLICK="--enable-right"
             shift
             ;;
         *)
@@ -41,7 +41,7 @@ done
 
 # Check arguments
 if [ -z "$SAMPLE_IMAGE" ]; then
-    echo "Usage: $0 [--enable-right-click|-c] <sample_image_path>"
+    echo "Usage: $0 [--enable-right|-r] <sample_image_path>"
     exit 1
 fi
 IMAGE_DIR="$(dirname "$SAMPLE_IMAGE")"

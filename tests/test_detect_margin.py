@@ -74,12 +74,12 @@ class TestMarginDetector:
 
     def test_enable_right_false_symmetric_margins(self, test_image_symmetric):
         """
-        Test with enable_right_click=False on symmetric margins
+        Test with enable_right=False on symmetric margins
         Should detect left boundary and apply same margin to right
         """
         image_path, margin, width, height = test_image_symmetric
 
-        detector = MarginDetector(image_path, enable_right_click=False)
+        detector = MarginDetector(image_path, enable_right=False)
         detector.load_image()
 
         # Click on left margin area to detect right boundary
@@ -98,7 +98,7 @@ class TestMarginDetector:
         left = detector.left_boundary - 1  # Convert to 0-indexed
         assert left == margin, f"Expected left crop position {margin}, got {left}"
 
-        # When enable_right_click is False, right should be width - left_margin
+        # When enable_right is False, right should be width - left_margin
         left_margin_width = detector.left_boundary - 1
         expected_right = width - left_margin_width
         right = expected_right
@@ -112,12 +112,12 @@ class TestMarginDetector:
 
     def test_enable_right_true_symmetric_margins(self, test_image_symmetric):
         """
-        Test with enable_right_click=True on symmetric margins
+        Test with enable_right=True on symmetric margins
         Should detect both left and right boundaries independently
         """
         image_path, margin, width, height = test_image_symmetric
 
-        detector = MarginDetector(image_path, enable_right_click=True)
+        detector = MarginDetector(image_path, enable_right=True)
         detector.load_image()
 
         # Detect left boundary - click on left margin
@@ -151,12 +151,12 @@ class TestMarginDetector:
 
     def test_enable_right_true_asymmetric_margins(self, test_image_asymmetric):
         """
-        Test with enable_right_click=True on asymmetric margins
+        Test with enable_right=True on asymmetric margins
         Should correctly detect different left and right margins
         """
         image_path, left_margin, right_margin, width, height = test_image_asymmetric
 
-        detector = MarginDetector(image_path, enable_right_click=True)
+        detector = MarginDetector(image_path, enable_right=True)
         detector.load_image()
 
         # Detect left boundary
@@ -190,12 +190,12 @@ class TestMarginDetector:
 
     def test_enable_right_false_asymmetric_margins(self, test_image_asymmetric):
         """
-        Test with enable_right_click=False on asymmetric margins
+        Test with enable_right=False on asymmetric margins
         Should apply left margin width to right side, even though actual right margin differs
         """
         image_path, left_margin, right_margin, width, height = test_image_asymmetric
 
-        detector = MarginDetector(image_path, enable_right_click=False)
+        detector = MarginDetector(image_path, enable_right=False)
         detector.load_image()
 
         # Detect left boundary only
@@ -224,7 +224,7 @@ class TestMarginDetector:
         """
         image_path, margin, width, height = test_image_symmetric
 
-        detector = MarginDetector(image_path, enable_right_click=False)
+        detector = MarginDetector(image_path, enable_right=False)
         detector.load_image()
 
         # Click at the very last column where no boundary exists to the right
@@ -240,7 +240,7 @@ class TestMarginDetector:
         """
         image_path, margin, width, height = test_image_symmetric
 
-        detector = MarginDetector(image_path, enable_right_click=False)
+        detector = MarginDetector(image_path, enable_right=False)
         detector.load_image()
 
         # Click at position just before boundary

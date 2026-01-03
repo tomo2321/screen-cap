@@ -15,20 +15,20 @@ For example, if pixel 1 is white, pixels 2-3 are black (content), and pixel 4 is
 - Right boundary = 3 (last content pixel)
 
 Modes:
-- enable_right_click=False (default): Click left half to detect left boundary.
+- enable_right=False (default): Click left half to detect left boundary.
   The same margin width from the left side is automatically applied to the right side.
-- enable_right_click=True: Click left half for left boundary, right half for right boundary.
+- enable_right=True: Click left half for left boundary, right half for right boundary.
   Manual control of both boundaries.
 
 Usage:
-    python detect_margin.py <image_path> [--enable-right-click]
+    python detect_margin.py <image_path> [--enable-right|-r]
 
 Examples:
     # Automatic detection with same margin width applied to right side (default)
     python detect_margin.py image.png
 
     # Manual control for asymmetric margins
-    python detect_margin.py image.png --enable-right-click
+    python detect_margin.py image.png --enable-right
 
 How it works:
 1. Click on a margin area (white/background region)
@@ -54,15 +54,15 @@ class MarginDetector:
     Attributes:
         left_boundary (int): 1-indexed position of first content pixel (None if not detected)
         right_boundary (int): 1-indexed position of last content pixel (None if not detected)
-        enable_right_click (bool): If False, automatically applies the same margin width from left side to right side
-                                   If True, requires manual right-side click for right boundary
+        enable_right (bool): If False, automatically applies the same margin width from left side to right side
+                             If True, requires manual right-side click for right boundary
 
     Internal processing uses 0-indexed coordinates, but all user-facing values
     (display and boundary storage) use 1-indexed positions.
     """
-    def __init__(self, image_path, enable_right_click=False):
+    def __init__(self, image_path, enable_right=False):
         self.image_path = image_path
-        self.enable_right_click = enable_right_click
+        self.enable_right = enable_right
         self.image = None
         self.gray = None
         self.left_boundary = None
@@ -166,8 +166,8 @@ class MarginDetector:
             else:
                 print("Boundary not found")
 
-            # When enable_right_click is False, automatically search from the mirror position on the right side
-            if not self.enable_right_click:
+            # When enable_right is False, automatically search from the mirror position on the right side
+            if not self.enable_right:
                 # Calculate the mirror position of the click point relative to the center
                 # Center is at half_width (0-indexed)
                 # Distance from center to click point
@@ -185,7 +185,7 @@ class MarginDetector:
                     print("Right boundary not found")
 
         # Right half click
-        elif self.enable_right_click:
+        elif self.enable_right:
             print("Right half clicked: Searching to the left")
             boundary = self.find_boundary_left(x, y)
             if boundary:
@@ -208,11 +208,11 @@ class MarginDetector:
 
         Cropping logic:
         - If right_boundary is set:
-          * With enable_right_click=False (default): Overrides right boundary
+          * With enable_right=False (default): Overrides right boundary
             with left margin width from left side
-          * With enable_right_click=True: Uses detected right boundary directly
+          * With enable_right=True: Uses detected right boundary directly
         - If only left_boundary is set:
-          * With enable_right_click=False (default): Applies left margin width to right side
+          * With enable_right=False (default): Applies left margin width to right side
           * Otherwise: No cropping on right side
         - Otherwise: No cropping on respective side
 
@@ -232,15 +232,15 @@ class MarginDetector:
 
         # Determine right boundary
         if self.right_boundary:
-            # When enable_right_click is False, override right boundary with left margin width
-            if not self.enable_right_click and self.left_boundary:
+            # When enable_right is False, override right boundary with left margin width
+            if not self.enable_right and self.left_boundary:
                 left_margin = self.left_boundary - 1
                 right = width - left_margin
                 print(f"Applying left margin width ({left_margin}px) to right side")
             else:
                 # right_boundary is 1-indexed last pixel, so use it directly for slice end
                 right = self.right_boundary
-        elif self.left_boundary and not self.enable_right_click:
+        elif self.left_boundary and not self.enable_right:
             # When --enable-right is false, remove same width from right as left
             left_margin = self.left_boundary - 1
             right = width - left_margin
@@ -282,10 +282,10 @@ class MarginDetector:
 
         print("\nUsage:")
         print("- Click left half: Search boundary to the right")
-        if self.enable_right_click:
+        if self.enable_right:
             print("- Click right half: Search boundary to the left")
         else:
-            print("- Right half processing is disabled (enable with --enable-right-click)")
+            print("- Right half processing is disabled (enable with --enable-right)")
         print("- Preview will be displayed after boundary detection")
         print("- Press 'q' to exit during preview\n")
 
@@ -310,14 +310,14 @@ def main():
         help="Path to the image file to process"
     )
     parser.add_argument(
-        "--enable-right-click", "-c",
+        "--enable-right", "-r",
         action="store_true",
         help="Enable right half click processing"
     )
 
     args = parser.parse_args()
 
-    detector = MarginDetector(args.image, args.enable_right_click)
+    detector = MarginDetector(args.image, args.enable_right)
     detector.run()
 
 
