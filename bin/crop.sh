@@ -3,33 +3,32 @@
 # Batch crop images based on margin detection
 #
 # This script detects margins from a sample image using detect_margin.py,
-# then applies the detected crop boundaries to all images in a directory.
+# then applies the detected crop boundaries to all images in the same directory.
 #
 # Usage:
-#   ./crop.sh <sample_image_path> <image_directory>
+#   ./crop.sh <sample_image_path>
 #
 # Arguments:
 #   sample_image_path: Path to a sample image for margin detection
-#   image_directory: Directory containing images to crop
 #
 # Output:
 #   Cropped images are saved to done/<directory_name>/
-#   Example: If image_directory is /User/user/hoge/fuga, output goes to done/fuga/
+#   Example: If sample_image_path is /User/user/hoge/fuga/page_001.png, output goes to done/fuga/
 #
 # Example:
-#   ./crop.sh ./figs/sample/page_001.png ./figs/sample
+#   ./crop.sh ./figs/sample/page_001.png
 #
 
 set -e
 
 # Check arguments
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 <sample_image_path> <image_directory>"
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <sample_image_path>"
     exit 1
 fi
 
 SAMPLE_IMAGE="$1"
-IMAGE_DIR="$2"
+IMAGE_DIR="$(dirname "$SAMPLE_IMAGE")"
 
 # Check if sample image exists
 if [ ! -f "$SAMPLE_IMAGE" ]; then
