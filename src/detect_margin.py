@@ -20,9 +20,11 @@ Modes:
   relative to the image center) at the same y-coordinate.
 - enable_right=True: Click left half for left boundary, right half for right boundary.
   Manual control of both boundaries.
+- enable_same_margin=True: Apply the same margin width from left side to right side.
+  Cannot be used with --enable-right. If both flags are specified, --enable-right takes priority.
 
 Usage:
-    python detect_margin.py <image_path> [--enable-right]
+    python detect_margin.py <image_path> [--enable-right | --enable-same-margin]
 
 Examples:
     # Automatic symmetric detection (default)
@@ -30,6 +32,9 @@ Examples:
 
     # Manual control for asymmetric margins
     python detect_margin.py image.png --enable-right
+
+    # Apply same left margin width to right side
+    python detect_margin.py image.png --enable-same-margin
 
 How it works:
 1. Click on a margin area (white/background region)
@@ -58,13 +63,25 @@ class MarginDetector:
         enable_right (bool): If False, automatically detects right boundary from mirrored position
                            (symmetric to left click point relative to image center)
                            If True, requires manual right-side click for right boundary
+        enable_same_margin (bool): If True, applies the same margin width from left side to right side.
+                                   Mutually exclusive with enable_right. If both are True,
+                                   enable_right takes priority and this flag is ignored.
     
     Internal processing uses 0-indexed coordinates, but all user-facing values
     (display and boundary storage) use 1-indexed positions.
     """
-    def __init__(self, image_path, enable_right=False):
+    def __init__(self, image_path, enable_right=False, enable_same_margin=False):
         self.image_path = image_path
         self.enable_right = enable_right
+        
+        # If both flags are specified, prioritize enable_right
+        if enable_right and enable_same_margin:
+            print("Warning: Both --enable-right and --enable-same-margin specified.")
+            print("Prioritizing --enable-right. --enable-same-margin will be ignored.")
+            self.enable_same_margin = False
+        else:
+            self.enable_same_margin = enable_same_margin
+        
         self.image = None
         self.gray = None
         self.left_boundary = None
@@ -209,9 +226,14 @@ class MarginDetector:
         Crops the image based on detected boundaries and displays the result.
 
         Cropping logic:
-        - If right_boundary is set: Uses detected boundaries directly
-        - If enable_right=False and only left_boundary set:
-          Applies left margin width symmetrically to right side
+        - If right_boundary is set:
+          * With enable_same_margin=True (and enable_right=False): Overrides right boundary
+            with left margin width
+          * Otherwise: Uses detected right boundary directly
+        - If only left_boundary is set:
+          * With enable_same_margin=True: Applies left margin width to right side
+          * With enable_right=False (default): Applies left margin width to right side
+          * Otherwise: No cropping on right side
         - Otherwise: No cropping on respective side
 
         Boundary to slice conversion:
@@ -230,8 +252,19 @@ class MarginDetector:
 
         # Determine right boundary
         if self.right_boundary:
-            # right_boundary is 1-indexed last pixel, so use it directly for slice end
-            right = self.right_boundary
+            # When enable_right is False and enable_same_margin is True, override right boundary
+            if not self.enable_right and self.enable_same_margin and self.left_boundary:
+                left_margin = self.left_boundary - 1
+                right = width - left_margin
+                print(f"Applying left margin width ({left_margin}px) to right side (--enable-same-margin)")
+            else:
+                # right_boundary is 1-indexed last pixel, so use it directly for slice end
+                right = self.right_boundary
+        elif self.enable_same_margin and self.left_boundary:
+            # Apply same margin width from left to right
+            left_margin = self.left_boundary - 1
+            right = width - left_margin
+            print(f"Applying left margin width ({left_margin}px) to right side (--enable-same-margin)")
         elif self.left_boundary and not self.enable_right:
             # When --enable-right is false, remove same width from right as left
             left_margin = self.left_boundary - 1
@@ -306,10 +339,15 @@ def main():
         action="store_true",
         help="Enable right half click processing"
     )
+    parser.add_argument(
+        "--enable-same-margin",
+        action="store_true",
+        help="Apply the same margin width from left side to right side"
+    )
 
     args = parser.parse_args()
 
-    detector = MarginDetector(args.image, args.enable_right)
+    detector = MarginDetector(args.image, args.enable_right, args.enable_same_margin)
     detector.run()
 
 
