@@ -15,23 +15,23 @@ For example, if pixel 1 is white, pixels 2-3 are black (content), and pixel 4 is
 - Right boundary = 3 (last content pixel)
 
 Modes:
-- enable_right=False (default): Click left half to detect left boundary.
+- enable_right_click=False (default): Click left half to detect left boundary.
   Right boundary is automatically detected from the mirrored position (symmetric to the click point
   relative to the image center) at the same y-coordinate.
-- enable_right=True: Click left half for left boundary, right half for right boundary.
+- enable_right_click=True: Click left half for left boundary, right half for right boundary.
   Manual control of both boundaries.
 - enable_same_margin=True: Apply the same margin width from left side to right side.
-  Cannot be used with --enable-right. If both flags are specified, --enable-right takes priority.
+  Cannot be used with --enable-right-click. If both flags are specified, --enable-right-click takes priority.
 
 Usage:
-    python detect_margin.py <image_path> [--enable-right | --enable-same-margin]
+    python detect_margin.py <image_path> [--enable-right-click | --enable-same-margin]
 
 Examples:
     # Automatic symmetric detection (default)
     python detect_margin.py image.png
 
     # Manual control for asymmetric margins
-    python detect_margin.py image.png --enable-right
+    python detect_margin.py image.png --enable-right-click
 
     # Apply same left margin width to right side
     python detect_margin.py image.png --enable-same-margin
@@ -60,24 +60,24 @@ class MarginDetector:
     Attributes:
         left_boundary (int): 1-indexed position of first content pixel (None if not detected)
         right_boundary (int): 1-indexed position of last content pixel (None if not detected)
-        enable_right (bool): If False, automatically detects right boundary from mirrored position
-                           (symmetric to left click point relative to image center)
-                           If True, requires manual right-side click for right boundary
+        enable_right_click (bool): If False, automatically detects right boundary from mirrored position
+                                   (symmetric to left click point relative to image center)
+                                   If True, requires manual right-side click for right boundary
         enable_same_margin (bool): If True, applies the same margin width from left side to right side.
-                                   Mutually exclusive with enable_right. If both are True,
-                                   enable_right takes priority and this flag is ignored.
+                                   Mutually exclusive with enable_right_click. If both are True,
+                                   enable_right_click takes priority and this flag is ignored.
     
     Internal processing uses 0-indexed coordinates, but all user-facing values
     (display and boundary storage) use 1-indexed positions.
     """
-    def __init__(self, image_path, enable_right=False, enable_same_margin=False):
+    def __init__(self, image_path, enable_right_click=False, enable_same_margin=False):
         self.image_path = image_path
-        self.enable_right = enable_right
+        self.enable_right_click = enable_right_click
         
-        # If both flags are specified, prioritize enable_right
-        if enable_right and enable_same_margin:
-            print("Warning: Both --enable-right and --enable-same-margin specified.")
-            print("Prioritizing --enable-right. --enable-same-margin will be ignored.")
+        # If both flags are specified, prioritize enable_right_click
+        if enable_right_click and enable_same_margin:
+            print("Warning: Both --enable-right-click and --enable-same-margin specified.")
+            print("Prioritizing --enable-right-click. --enable-same-margin will be ignored.")
             self.enable_same_margin = False
         else:
             self.enable_same_margin = enable_same_margin
@@ -185,8 +185,8 @@ class MarginDetector:
             else:
                 print("Boundary not found")
 
-            # When enable_right is False, automatically search from the mirror position on the right side
-            if not self.enable_right:
+            # When enable_right_click is False, automatically search from the mirror position on the right side
+            if not self.enable_right_click:
                 # Calculate the mirror position of the click point relative to the center
                 # Center is at half_width (0-indexed)
                 # Distance from center to click point
@@ -204,7 +204,7 @@ class MarginDetector:
                     print("Right boundary not found")
 
         # Right half click
-        elif self.enable_right:
+        elif self.enable_right_click:
             print("Right half clicked: Searching to the left")
             boundary = self.find_boundary_left(x, y)
             if boundary:
@@ -213,7 +213,7 @@ class MarginDetector:
             else:
                 print("Boundary not found")
         else:
-            print("Right half processing is disabled (use --enable-right flag)")
+            print("Right half processing is disabled (use --enable-right-click flag)")
 
         # Show preview when boundary is detected
         if self.left_boundary or self.right_boundary:
@@ -252,8 +252,8 @@ class MarginDetector:
 
         # Determine right boundary
         if self.right_boundary:
-            # When enable_right is False and enable_same_margin is True, override right boundary
-            if not self.enable_right and self.enable_same_margin and self.left_boundary:
+            # When enable_right_click is False and enable_same_margin is True, override right boundary
+            if not self.enable_right_click and self.enable_same_margin and self.left_boundary:
                 left_margin = self.left_boundary - 1
                 right = width - left_margin
                 print(f"Applying left margin width ({left_margin}px) to right side (--enable-same-margin)")
@@ -265,7 +265,7 @@ class MarginDetector:
             left_margin = self.left_boundary - 1
             right = width - left_margin
             print(f"Applying left margin width ({left_margin}px) to right side (--enable-same-margin)")
-        elif self.left_boundary and not self.enable_right:
+        elif self.left_boundary and not self.enable_right_click:
             # When --enable-right is false, remove same width from right as left
             left_margin = self.left_boundary - 1
             right = width - left_margin
@@ -307,10 +307,10 @@ class MarginDetector:
 
         print("\nUsage:")
         print("- Click left half: Search boundary to the right")
-        if self.enable_right:
+        if self.enable_right_click:
             print("- Click right half: Search boundary to the left")
         else:
-            print("- Right half processing is disabled (enable with --enable-right)")
+            print("- Right half processing is disabled (enable with --enable-right-click)")
         print("- Preview will be displayed after boundary detection")
         print("- Press 'q' to exit during preview\n")
 
@@ -335,19 +335,19 @@ def main():
         help="Path to the image file to process"
     )
     parser.add_argument(
-        "--enable-right",
+        "--enable-right-click", "-c",
         action="store_true",
         help="Enable right half click processing"
     )
     parser.add_argument(
-        "--enable-same-margin",
+        "--enable-same-margin", "-s",
         action="store_true",
         help="Apply the same margin width from left side to right side"
     )
 
     args = parser.parse_args()
 
-    detector = MarginDetector(args.image, args.enable_right, args.enable_same_margin)
+    detector = MarginDetector(args.image, args.enable_right_click, args.enable_same_margin)
     detector.run()
 
 

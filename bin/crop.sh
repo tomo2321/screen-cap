@@ -6,10 +6,10 @@
 # then applies the detected crop boundaries to all images in the same directory.
 #
 # Usage:
-#   ./crop.sh [--enable-right|-e] [--enable-same-margin|-s] <sample_image_path>
+#   ./crop.sh [--enable-right-click|-c] [--enable-same-margin|-s] <sample_image_path>
 #
 # Arguments:
-#   --enable-right, -e: Enable right margin detection (optional)
+#   --enable-right-click, -c: Enable right margin detection (optional)
 #   --enable-same-margin, -s: Apply same left margin width to right side (optional)
 #   sample_image_path: Path to a sample image for margin detection
 #
@@ -19,8 +19,8 @@
 #
 # Example:
 #   ./crop.sh ./figs/sample/page_001.png
-#   ./crop.sh --enable-right ./figs/sample/page_001.png
-#   ./crop.sh -e ./figs/sample/page_001.png
+#   ./crop.sh --enable-right-click ./figs/sample/page_001.png
+#   ./crop.sh -c ./figs/sample/page_001.png
 #   ./crop.sh --enable-same-margin ./figs/sample/page_001.png
 #   ./crop.sh -s ./figs/sample/page_001.png
 #
@@ -28,12 +28,12 @@
 set -e
 
 # Parse options
-ENABLE_RIGHT=""
+ENABLE_RIGHT_CLICK=""
 ENABLE_SAME_MARGIN=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --enable-right|-e)
-            ENABLE_RIGHT="--enable-right"
+        --enable-right-click|-c)
+            ENABLE_RIGHT_CLICK="--enable-right-click"
             shift
             ;;
         --enable-same-margin|-s)
@@ -49,7 +49,7 @@ done
 
 # Check arguments
 if [ -z "$SAMPLE_IMAGE" ]; then
-    echo "Usage: $0 [--enable-right|-e] [--enable-same-margin|-s] <sample_image_path>"
+    echo "Usage: $0 [--enable-right-click|-c] [--enable-same-margin|-s] <sample_image_path>"
     exit 1
 fi
 IMAGE_DIR="$(dirname "$SAMPLE_IMAGE")"
@@ -72,7 +72,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Run detect_margin.py and capture output
 echo "Detecting margins from sample image: $SAMPLE_IMAGE"
-DETECT_OUTPUT=$(python "$PROJECT_ROOT/src/detect_margin.py" $ENABLE_RIGHT $ENABLE_SAME_MARGIN "$SAMPLE_IMAGE" 2>&1 || true)
+DETECT_OUTPUT=$(python "$PROJECT_ROOT/src/detect_margin.py" $ENABLE_RIGHT_CLICK $ENABLE_SAME_MARGIN "$SAMPLE_IMAGE" 2>&1 || true)
 
 # Extract left and right boundary values
 # Expected format: "Left boundary (first pixel): 101, Right boundary (last pixel): 412"
