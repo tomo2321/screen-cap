@@ -76,8 +76,8 @@ DETECT_OUTPUT=$(python "$PROJECT_ROOT/src/detect_margin.py" $ENABLE_RIGHT $ENABL
 
 # Extract left and right boundary values
 # Expected format: "Left boundary (first pixel): 101, Right boundary (last pixel): 412"
-LEFT_BOUNDARY=$(echo "$DETECT_OUTPUT" | grep -oE "Left boundary \(first pixel\): [0-9]+" | grep -oE "[0-9]+$" || echo "")
-RIGHT_BOUNDARY=$(echo "$DETECT_OUTPUT" | grep -oE "Right boundary \(last pixel\): [0-9]+" | grep -oE "[0-9]+$" || echo "")
+LEFT_BOUNDARY=$(echo "$DETECT_OUTPUT" | grep -oE "Left boundary \(first pixel\): [0-9]+" | grep -oE "[0-9]+$" | tail -1 || echo "")
+RIGHT_BOUNDARY=$(echo "$DETECT_OUTPUT" | grep -oE "Right boundary \(last pixel\): [0-9]+" | grep -oE "[0-9]+$" | tail -1 || echo "")
 
 # Check if boundaries were detected
 if [ -z "$LEFT_BOUNDARY" ] || [ -z "$RIGHT_BOUNDARY" ]; then
