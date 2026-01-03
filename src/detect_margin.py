@@ -16,7 +16,8 @@ For example, if pixel 1 is white, pixels 2-3 are black (content), and pixel 4 is
 
 Modes:
 - enable_right=False (default): Click left half to detect left boundary.
-  Right boundary is automatically detected from the right edge at the same y-coordinate.
+  Right boundary is automatically detected from the mirrored position (symmetric to the click point
+  relative to the image center) at the same y-coordinate.
 - enable_right=True: Click left half for left boundary, right half for right boundary.
   Manual control of both boundaries.
 
@@ -54,7 +55,8 @@ class MarginDetector:
     Attributes:
         left_boundary (int): 1-indexed position of first content pixel (None if not detected)
         right_boundary (int): 1-indexed position of last content pixel (None if not detected)
-        enable_right (bool): If False, automatically detects right boundary from right edge
+        enable_right (bool): If False, automatically detects right boundary from mirrored position
+                           (symmetric to left click point relative to image center)
                            If True, requires manual right-side click for right boundary
     
     Internal processing uses 0-indexed coordinates, but all user-facing values
@@ -166,11 +168,17 @@ class MarginDetector:
             else:
                 print("Boundary not found")
 
-            # When enable_right is False, automatically search from the right edge at the same y coordinate
+            # When enable_right is False, automatically search from the mirror position on the right side
             if not self.enable_right:
-                print(f"Automatically searching from right edge at y = {y + 1}")
-                # Start from the right edge (width - 1 in 0-indexed)
-                right_x = width - 1
+                # Calculate the mirror position of the click point relative to the center
+                # Center is at half_width (0-indexed)
+                # Distance from center to click point
+                distance_from_center = half_width - x
+                # Mirror position on the right side
+                right_x = half_width + distance_from_center
+                # Clamp to valid range
+                right_x = min(right_x, width - 1)
+                print(f"Automatically searching from mirrored position x = {right_x + 1} (1-indexed) at y = {y + 1}")
                 boundary = self.find_boundary_left(right_x, y)
                 if boundary:
                     self.right_boundary = boundary
