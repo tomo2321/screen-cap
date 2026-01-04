@@ -6,10 +6,11 @@
 # then applies the detected crop boundaries to all images in the same directory.
 #
 # Usage:
-#   ./crop.sh [--enable-right|-r] <sample_image_path>
+#   ./crop.sh [--enable-right|-r] [--enable-vertical|-v] <sample_image_path>
 #
 # Arguments:
 #   --enable-right, -r: Enable right margin detection (optional)
+#   --enable-vertical, -v: Enable vertical margin detection (optional)
 #   sample_image_path: Path to a sample image for margin detection
 #
 # Output:
@@ -19,6 +20,9 @@
 # Example:
 #   ./crop.sh ./figs/sample/page_001.png
 #   ./crop.sh --enable-right ./figs/sample/page_001.png
+#   ./crop.sh --enable-vertical ./figs/sample/page_001.png
+#   ./crop.sh -v ./figs/sample/page_001.png
+#   ./crop.sh -r -v ./figs/sample/page_001.png
 #   ./crop.sh -r ./figs/sample/page_001.png
 #
 
@@ -26,10 +30,15 @@ set -e
 
 # Parse options
 ENABLE_RIGHT_CLICK=""
+ENABLE_VERTICAL=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --enable-right|-r)
             ENABLE_RIGHT_CLICK="--enable-right"
+            shift
+            ;;
+        --enable-vertical|-v)
+            ENABLE_VERTICAL="--enable-vertical"
             shift
             ;;
         *)
@@ -41,7 +50,7 @@ done
 
 # Check arguments
 if [ -z "$SAMPLE_IMAGE" ]; then
-    echo "Usage: $0 [--enable-right|-r] <sample_image_path>"
+    echo "Usage: $0 [--enable-right|-r] [--enable-vertical|-v] <sample_image_path>"
     exit 1
 fi
 IMAGE_DIR="$(dirname "$SAMPLE_IMAGE")"
@@ -64,7 +73,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Run detect_margin.py and capture output
 echo "Detecting margins from sample image: $SAMPLE_IMAGE"
-DETECT_OUTPUT=$(python "$PROJECT_ROOT/src/detect_margin.py" $ENABLE_RIGHT_CLICK "$SAMPLE_IMAGE" 2>&1 || true)
+DETECT_OUTPUT=$(python "$PROJECT_ROOT/src/detect_margin.py" $ENABLE_RIGHT_CLICK $ENABLE_VERTICAL "$SAMPLE_IMAGE" 2>&1 || true)
 
 # Extract left and right boundary values
 # Expected format: "Left boundary (first pixel): 101, Right boundary (last pixel): 412"
@@ -80,6 +89,26 @@ if [ -z "$LEFT_BOUNDARY" ] || [ -z "$RIGHT_BOUNDARY" ]; then
 fi
 
 echo "Detected boundaries: Left=$LEFT_BOUNDARY, Right=$RIGHT_BOUNDARY"
+
+# Extract vertical boundary values if --enable-vertical is set
+# Expected format: "Top boundary (first pixel): 101, Bottom boundary (last pixel): 512"
+TOP_BOUNDARY=""
+BOTTOM_BOUNDARY=""
+VERTICAL_FLAGS=""
+if [ -n "$ENABLE_VERTICAL" ]; then
+    TOP_BOUNDARY=$(echo "$DETECT_OUTPUT" | grep -oE "Top boundary \(first pixel\): [0-9]+" | grep -oE "[0-9]+$" | tail -1 || echo "")
+    BOTTOM_BOUNDARY=$(echo "$DETECT_OUTPUT" | grep -oE "Bottom boundary \(last pixel\): [0-9]+" | grep -oE "[0-9]+$" | tail -1 || echo "")
+    
+    if [ -z "$TOP_BOUNDARY" ] || [ -z "$BOTTOM_BOUNDARY" ]; then
+        echo "Error: Failed to detect vertical boundaries"
+        echo "Output from detect_margin.py:"
+        echo "$DETECT_OUTPUT"
+        exit 1
+    fi
+    
+    echo "Detected vertical boundaries: Top=$TOP_BOUNDARY, Bottom=$BOTTOM_BOUNDARY"
+    VERTICAL_FLAGS="--top $TOP_BOUNDARY --bottom $BOTTOM_BOUNDARY"
+fi
 
 # Extract directory name from image_directory path
 DIR_NAME=$(basename "$IMAGE_DIR")
@@ -111,7 +140,7 @@ for IMAGE_FILE in "$IMAGE_DIR"/*; do
 
     # Crop image
     echo "Processing: $FILENAME"
-    python "$PROJECT_ROOT/src/crop.py" "$IMAGE_FILE" "$OUTPUT_FILE" "$LEFT_BOUNDARY" "$RIGHT_BOUNDARY"
+    python "$PROJECT_ROOT/src/crop.py" "$IMAGE_FILE" "$OUTPUT_FILE" $LEFT_BOUNDARY $RIGHT_BOUNDARY $VERTICAL_FLAGS
 
     IMAGE_COUNT=$((IMAGE_COUNT + 1))
 done
