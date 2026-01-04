@@ -402,6 +402,12 @@ class MarginDetector:
         - If enable_vertical=True: Uses detected top_boundary and bottom_boundary
         - Otherwise: No cropping on vertical direction
 
+        Display values for undetected boundaries:
+        - Left boundary: 1 (first pixel) if not detected
+        - Right boundary: width (last pixel number) if not detected
+        - Top boundary: 1 (first pixel) if not detected
+        - Bottom boundary: height (last pixel number) if not detected
+
         Boundary to slice conversion:
         - left_boundary (1-indexed) -> left = left_boundary - 1 (0-indexed slice start)
         - right_boundary (1-indexed) -> right = right_boundary (slice end, exclusive)
@@ -455,10 +461,15 @@ class MarginDetector:
         # Crop image (vertical then horizontal)
         cropped = self.image[top:bottom, left:right].copy()
 
+        # Determine display values for boundaries
+        display_left = self.left_boundary if self.left_boundary else 1
+        display_top = self.top_boundary if self.top_boundary else 1
+        display_bottom = self.bottom_boundary if self.bottom_boundary else height
+
         print(f"\nDisplaying preview with margins removed...")
         print(f"Original size: {width}x{height}, Cropped size: {cropped.shape[1]}x{cropped.shape[0]}")
-        print(f"Horizontal - Left boundary (first pixel): {self.left_boundary or 'None'}, Right boundary (last pixel): {self.right_boundary or right}")
-        print(f"Vertical - Top boundary (first pixel): {self.top_boundary or 'None'}, Bottom boundary (last pixel): {self.bottom_boundary or bottom}")
+        print(f"Horizontal - Left boundary (first pixel): {display_left}, Right boundary (last pixel): {self.right_boundary or right}")
+        print(f"Vertical - Top boundary (first pixel): {display_top}, Bottom boundary (last pixel): {display_bottom}")
         print("Press 'q' to exit")
 
         # Display preview window

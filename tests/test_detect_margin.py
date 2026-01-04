@@ -444,3 +444,80 @@ class TestMarginDetector:
 
             # Cleanup
             Path(tmp.name).unlink(missing_ok=True)
+
+    def test_display_values_without_vertical_detection(self, test_image_symmetric):
+        """
+        Test that display values show default boundaries when enable_vertical=False
+        Top should be 1 and Bottom should be height when not detected
+        """
+        image_path, margin, width, height = test_image_symmetric
+
+        detector = MarginDetector(image_path, enable_right=False, enable_vertical=False)
+        detector.load_image()
+
+        # Detect only left boundary (horizontal)
+        click_x, click_y = 50, 256
+        left_boundary = detector.find_boundary_right(click_x, click_y)
+        detector.left_boundary = left_boundary
+
+        # Vertical boundaries should not be set
+        assert detector.top_boundary is None, "Top boundary should be None when enable_vertical=False"
+        assert detector.bottom_boundary is None, "Bottom boundary should be None when enable_vertical=False"
+
+        # Verify display values
+        display_left = detector.left_boundary if detector.left_boundary else 1
+        display_top = detector.top_boundary if detector.top_boundary else 1
+        display_bottom = detector.bottom_boundary if detector.bottom_boundary else height
+
+        assert display_left == margin + 1, f"Expected display left to be {margin + 1}, got {display_left}"
+        assert display_top == 1, f"Expected display top to be 1, got {display_top}"
+        assert display_bottom == height, f"Expected display bottom to be {height}, got {display_bottom}"
+
+    def test_display_values_with_vertical_detection(self, test_image_vertical_margins):
+        """
+        Test that display values show detected boundaries when enable_vertical=True
+        """
+        image_path, top_margin, bottom_margin, width, height = test_image_vertical_margins
+
+        detector = MarginDetector(image_path, enable_vertical=True)
+        detector.load_image()
+
+        # Detect vertical boundaries
+        click_x, click_y = 256, 256
+        top_boundary = detector.find_boundary_up_for_top(click_x, click_y)
+        bottom_boundary = detector.find_boundary_down_for_bottom(click_x, click_y)
+        detector.top_boundary = top_boundary
+        detector.bottom_boundary = bottom_boundary
+
+        # Verify display values use detected boundaries
+        display_top = detector.top_boundary if detector.top_boundary else 1
+        display_bottom = detector.bottom_boundary if detector.bottom_boundary else height
+
+        assert display_top == top_margin + 1, \
+            f"Expected display top to be {top_margin + 1}, got {display_top}"
+        assert display_bottom == height - bottom_margin, \
+            f"Expected display bottom to be {height - bottom_margin}, got {display_bottom}"
+
+    def test_display_values_with_undetected_left_boundary(self, test_image_vertical_margins):
+        """
+        Test that display values show default value (1) when left boundary is not detected
+        This can occur when only vertical margins are detected
+        """
+        image_path, top_margin, bottom_margin, width, height = test_image_vertical_margins
+
+        detector = MarginDetector(image_path, enable_vertical=True)
+        detector.load_image()
+
+        # Detect vertical boundaries
+        click_x, click_y = 256, 256
+        top_boundary = detector.find_boundary_up_for_top(click_x, click_y)
+        bottom_boundary = detector.find_boundary_down_for_bottom(click_x, click_y)
+        detector.top_boundary = top_boundary
+        detector.bottom_boundary = bottom_boundary
+
+        # Left boundary should not be set (only vertical detection enabled)
+        assert detector.left_boundary is None, "Left boundary should be None when not detected"
+
+        # Verify display value for left boundary shows default (1)
+        display_left = detector.left_boundary if detector.left_boundary else 1
+        assert display_left == 1, f"Expected display left to be 1 when not detected, got {display_left}"
