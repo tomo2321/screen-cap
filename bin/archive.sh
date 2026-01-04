@@ -33,6 +33,12 @@ for dir in "$DONE_DIR"/*/; do
     # Set zip file name
     zipfile="$ARCHIVE_DIR/${dirname}.zip"
 
+    # Skip if zip file already exists
+    if [ -f "$zipfile" ]; then
+        echo "Skipping: $dirname (already archived)"
+        continue
+    fi
+
     echo "Compressing: $dirname -> ${zipfile}"
 
     # Compress directory with zip command
