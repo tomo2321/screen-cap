@@ -1,0 +1,11 @@
+[project]
+name = "screen-cap"
+version = "0.1.0"
+description = "Tools for capturing and processing screenshots."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "opencv-python",
+    "pyautogui",
+    "pytest",
+]
