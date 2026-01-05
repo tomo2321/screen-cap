@@ -6,11 +6,12 @@
 # then applies the detected crop boundaries to all images in the same directory.
 #
 # Usage:
-#   ./crop.sh [--enable-right|-r] [--enable-vertical|-v] <sample_image_path>
+#   ./crop.sh [--enable-right|-r] [--enable-vertical|-v] [--remove|-R] <sample_image_path>
 #
 # Arguments:
 #   --enable-right, -r: Enable right margin detection (optional)
 #   --enable-vertical, -v: Enable vertical margin detection (optional)
+#   --remove, -R: Remove source image directory without confirmation (optional)
 #   sample_image_path: Path to a sample image for margin detection
 #
 # Output:
@@ -24,6 +25,8 @@
 #   ./crop.sh -v ./figs/sample/page_001.png
 #   ./crop.sh -r -v ./figs/sample/page_001.png
 #   ./crop.sh -r ./figs/sample/page_001.png
+#   ./crop.sh --remove ./figs/sample/page_001.png
+#   ./crop.sh -r -v -R ./figs/sample/page_001.png
 #
 
 set -e
@@ -31,6 +34,7 @@ set -e
 # Parse options
 ENABLE_RIGHT_CLICK=""
 ENABLE_VERTICAL=""
+REMOVE_SOURCE=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --enable-right|-r)
@@ -39,6 +43,10 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --enable-vertical|-v)
             ENABLE_VERTICAL="--enable-vertical"
+            shift
+            ;;
+        --remove|-R)
+            REMOVE_SOURCE="true"
             shift
             ;;
         *)
@@ -149,3 +157,21 @@ echo ""
 echo "Batch crop completed!"
 echo "Processed $IMAGE_COUNT images"
 echo "Output location: $OUTPUT_DIR"
+
+# Handle source directory removal
+if [ -n "$REMOVE_SOURCE" ]; then
+    echo "Removing source directory: $IMAGE_DIR"
+    rm -rf "$IMAGE_DIR"
+    echo "Source directory removed."
+else
+    echo ""
+    read -p "Do you want to remove the source image directory? ($IMAGE_DIR) [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Removing source directory: $IMAGE_DIR"
+        rm -rf "$IMAGE_DIR"
+        echo "Source directory removed."
+    else
+        echo "Source directory kept."
+    fi
+fi
