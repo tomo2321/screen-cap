@@ -128,6 +128,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
 # Project
 figs/
 done/
