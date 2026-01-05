@@ -1,3 +1,6 @@
+"""
+Capture screenshots of pages in an application (e.g., PDF viewer) and save them as image files.
+"""
 import os
 import time
 from datetime import datetime
@@ -9,7 +12,7 @@ MAX_PAGE_NUM = 10000
 pag.PAUSE = 1.5
 
 
-def main(
+def capture(
     save_dir,
     total_page_num: int = MAX_PAGE_NUM,
     next_page_direction: str = 'right',
@@ -32,9 +35,12 @@ def main(
         pag.hotkey(next_page_direction)
 
 
-if __name__ == '__main__':
-
+def main() -> None:
     save_dir = f"figs/{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}"
     total_page_num = 123
 
-    main(save_dir, total_page_num)
+    capture(save_dir, total_page_num)
+
+
+if __name__ == '__main__':
+    main()
