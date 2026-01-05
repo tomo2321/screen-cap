@@ -8,7 +8,6 @@ from datetime import datetime
 
 import pyautogui as pag
 
-
 MAX_PAGE_NUM = 10000
 pag.PAUSE = 1.5
 
