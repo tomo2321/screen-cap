@@ -52,15 +52,21 @@ def crop_image(input_path, output_path, start_pos, end_pos, top=None, bottom=Non
 
     # Validate positions
     if start_pos < 1 or end_pos < 1:
-        print(f"Error: Positions must be 1 or greater (start={start_pos}, end={end_pos})")
+        print(
+            f"Error: Positions must be 1 or greater (start={start_pos}, end={end_pos})"
+        )
         sys.exit(1)
 
     if start_pos > width or end_pos > width:
-        print(f"Error: Positions exceed image width {width} (start={start_pos}, end={end_pos})")
+        print(
+            f"Error: Positions exceed image width {width} (start={start_pos}, end={end_pos})"
+        )
         sys.exit(1)
 
     if start_pos > end_pos:
-        print(f"Error: Start position must be <= end position (start={start_pos}, end={end_pos})")
+        print(
+            f"Error: Start position must be <= end position (start={start_pos}, end={end_pos})"
+        )
         sys.exit(1)
 
     # Set default values for top and bottom if not provided
@@ -71,15 +77,21 @@ def crop_image(input_path, output_path, start_pos, end_pos, top=None, bottom=Non
 
     # Validate vertical positions
     if top < 1 or bottom < 1:
-        print(f"Error: Top and bottom positions must be 1 or greater (top={top}, bottom={bottom})")
+        print(
+            f"Error: Top and bottom positions must be 1 or greater (top={top}, bottom={bottom})"
+        )
         sys.exit(1)
 
     if top > height or bottom > height:
-        print(f"Error: Top/bottom positions exceed image height {height} (top={top}, bottom={bottom})")
+        print(
+            f"Error: Top/bottom positions exceed image height {height} (top={top}, bottom={bottom})"
+        )
         sys.exit(1)
 
     if top > bottom:
-        print(f"Error: Top position must be <= bottom position (top={top}, bottom={bottom})")
+        print(
+            f"Error: Top position must be <= bottom position (top={top}, bottom={bottom})"
+        )
         sys.exit(1)
 
     # Convert 1-indexed positions to 0-indexed slice indices
@@ -90,7 +102,9 @@ def crop_image(input_path, output_path, start_pos, end_pos, top=None, bottom=Non
 
     # Vertical crop indices
     top_idx = top - 1
-    bottom_idx = bottom  # bottom is inclusive, so use it directly for exclusive slice end
+    bottom_idx = (
+        bottom  # bottom is inclusive, so use it directly for exclusive slice end
+    )
 
     # Crop image
     cropped = image[top_idx:bottom_idx, left:right]
@@ -102,49 +116,52 @@ def crop_image(input_path, output_path, start_pos, end_pos, top=None, bottom=Non
         sys.exit(1)
 
     print(f"Cropped image saved: {output_path}")
-    print(f"Original size: {width}x{height}, Cropped size: {cropped.shape[1]}x{cropped.shape[0]}")
+    print(
+        f"Original size: {width}x{height}, Cropped size: {cropped.shape[1]}x{cropped.shape[0]}"
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="Crop image horizontally and optionally vertically based on pixel positions (1-indexed, inclusive)"
     )
-    parser.add_argument(
-        "input_image",
-        help="Path to input image file"
-    )
-    parser.add_argument(
-        "output_image",
-        help="Path to output image file"
-    )
+    parser.add_argument("input_image", help="Path to input image file")
+    parser.add_argument("output_image", help="Path to output image file")
     parser.add_argument(
         "start_pos",
         type=int,
-        help="Starting horizontal pixel position (1-indexed, inclusive)"
+        help="Starting horizontal pixel position (1-indexed, inclusive)",
     )
     parser.add_argument(
         "end_pos",
         type=int,
-        help="Ending horizontal pixel position (1-indexed, inclusive)"
+        help="Ending horizontal pixel position (1-indexed, inclusive)",
     )
     parser.add_argument(
         "--top",
         "-t",
         type=int,
         default=None,
-        help="Starting vertical pixel position (1-indexed, inclusive, defaults to 1)"
+        help="Starting vertical pixel position (1-indexed, inclusive, defaults to 1)",
     )
     parser.add_argument(
         "--bottom",
         "-b",
         type=int,
         default=None,
-        help="Ending vertical pixel position (1-indexed, inclusive, defaults to image height)"
+        help="Ending vertical pixel position (1-indexed, inclusive, defaults to image height)",
     )
 
     args = parser.parse_args()
 
-    crop_image(args.input_image, args.output_image, args.start_pos, args.end_pos, args.top, args.bottom)
+    crop_image(
+        args.input_image,
+        args.output_image,
+        args.start_pos,
+        args.end_pos,
+        args.top,
+        args.bottom,
+    )
 
 
 if __name__ == "__main__":

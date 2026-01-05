@@ -1,6 +1,7 @@
 """
 Capture screenshots of pages in an application (e.g., PDF viewer) and save them as image files.
 """
+
 import os
 import time
 from datetime import datetime
@@ -15,10 +16,9 @@ pag.PAUSE = 1.5
 def capture(
     save_dir,
     total_page_num: int = MAX_PAGE_NUM,
-    next_page_direction: str = 'right',
+    next_page_direction: str = "right",
     verbose: bool = True,
 ) -> None:
-
     if verbose:
         print(f"total page num: {total_page_num}")
         print(f"save dir: {save_dir}")
@@ -42,5 +42,5 @@ def main() -> None:
     capture(save_dir, total_page_num)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

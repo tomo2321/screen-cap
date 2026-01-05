@@ -85,6 +85,7 @@ class MarginDetector:
     Internal processing uses 0-indexed coordinates, but all user-facing values
     (display and boundary storage) use 1-indexed positions.
     """
+
     def __init__(self, image_path, enable_right=False, enable_vertical=False):
         self.image_path = image_path
         self.enable_right = enable_right
@@ -204,7 +205,7 @@ class MarginDetector:
 
         self.current_click = None
         while self.current_click is None:
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 cv2.destroyAllWindows()
                 sys.exit(0)
 
@@ -214,7 +215,9 @@ class MarginDetector:
         boundary = self.find_boundary_right(x, y)
         if boundary:
             self.left_boundary = boundary
-            print(f"Left boundary detected: x = {boundary} (first pixel of content, 1-indexed)")
+            print(
+                f"Left boundary detected: x = {boundary} (first pixel of content, 1-indexed)"
+            )
         else:
             print("Left boundary not found")
 
@@ -225,11 +228,15 @@ class MarginDetector:
             distance_from_center = half_width - x
             right_x = half_width + distance_from_center
             right_x = min(right_x, width - 1)
-            print(f"Automatically searching from mirrored position x = {right_x + 1} (1-indexed) at y = {y + 1}")
+            print(
+                f"Automatically searching from mirrored position x = {right_x + 1} (1-indexed) at y = {y + 1}"
+            )
             boundary = self.find_boundary_left(right_x, y)
             if boundary:
                 self.right_boundary = boundary
-                print(f"Right boundary detected: x = {boundary} (last pixel of content, 1-indexed)")
+                print(
+                    f"Right boundary detected: x = {boundary} (last pixel of content, 1-indexed)"
+                )
             else:
                 print("Right boundary not found")
 
@@ -248,7 +255,7 @@ class MarginDetector:
 
         self.current_click = None
         while self.current_click is None:
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 cv2.destroyAllWindows()
                 sys.exit(0)
 
@@ -258,7 +265,9 @@ class MarginDetector:
         boundary = self.find_boundary_left(x, y)
         if boundary:
             self.right_boundary = boundary
-            print(f"Right boundary detected: x = {boundary} (last pixel of content, 1-indexed)")
+            print(
+                f"Right boundary detected: x = {boundary} (last pixel of content, 1-indexed)"
+            )
         else:
             print("Right boundary not found")
 
@@ -290,7 +299,7 @@ class MarginDetector:
 
         self.current_click = None
         while self.current_click is None:
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 cv2.destroyAllWindows()
                 sys.exit(0)
 
@@ -301,7 +310,9 @@ class MarginDetector:
         boundary = self.find_boundary_up_for_top(x, y)
         if boundary:
             self.top_boundary = boundary
-            print(f"Top boundary detected: y = {boundary} (first pixel of content, 1-indexed)")
+            print(
+                f"Top boundary detected: y = {boundary} (first pixel of content, 1-indexed)"
+            )
         else:
             print("Top boundary not found")
 
@@ -309,7 +320,9 @@ class MarginDetector:
         boundary = self.find_boundary_down_for_bottom(x, y)
         if boundary:
             self.bottom_boundary = boundary
-            print(f"Bottom boundary detected: y = {boundary} (last pixel of content, 1-indexed)")
+            print(
+                f"Bottom boundary detected: y = {boundary} (last pixel of content, 1-indexed)"
+            )
         else:
             print("Bottom boundary not found")
 
@@ -342,7 +355,9 @@ class MarginDetector:
             current_value = self.gray[i, x]
             # When brightness changes, the next pixel down is the first content pixel
             if current_value != base_value:
-                return i + 2  # i+1 is 1-indexed pixel where brightness changed, i+2 is first content pixel
+                return (
+                    i + 2
+                )  # i+1 is 1-indexed pixel where brightness changed, i+2 is first content pixel
 
         # If no change found, top boundary is the first pixel
         return 1
@@ -466,10 +481,16 @@ class MarginDetector:
         display_top = self.top_boundary if self.top_boundary else 1
         display_bottom = self.bottom_boundary if self.bottom_boundary else height
 
-        print(f"\nDisplaying preview with margins removed...")
-        print(f"Original size: {width}x{height}, Cropped size: {cropped.shape[1]}x{cropped.shape[0]}")
-        print(f"Horizontal - Left boundary (first pixel): {display_left}, Right boundary (last pixel): {self.right_boundary or right}")
-        print(f"Vertical - Top boundary (first pixel): {display_top}, Bottom boundary (last pixel): {display_bottom}")
+        print("\nDisplaying preview with margins removed...")
+        print(
+            f"Original size: {width}x{height}, Cropped size: {cropped.shape[1]}x{cropped.shape[0]}"
+        )
+        print(
+            f"Horizontal - Left boundary (first pixel): {display_left}, Right boundary (last pixel): {self.right_boundary or right}"
+        )
+        print(
+            f"Vertical - Top boundary (first pixel): {display_top}, Bottom boundary (last pixel): {display_bottom}"
+        )
         print("Press 'q' to exit")
 
         # Display preview window
@@ -478,7 +499,7 @@ class MarginDetector:
         # Wait until 'q' key is pressed
         while True:
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
+            if key == ord("q"):
                 cv2.destroyAllWindows()
                 print("Exiting program")
                 sys.exit(0)
@@ -487,9 +508,9 @@ class MarginDetector:
         """Main processing"""
         self.load_image()
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("Margin Detection Tool")
-        print("="*50)
+        print("=" * 50)
         print("Press 'q' at any time to exit\n")
 
         # Detect left margin (always)
@@ -504,7 +525,12 @@ class MarginDetector:
             self.detect_vertical_margin()
 
         # Show preview
-        if self.left_boundary or self.right_boundary or self.top_boundary or self.bottom_boundary:
+        if (
+            self.left_boundary
+            or self.right_boundary
+            or self.top_boundary
+            or self.bottom_boundary
+        ):
             self.show_preview()
         else:
             print("\nNo boundaries detected")
@@ -515,19 +541,18 @@ def main():
     parser = argparse.ArgumentParser(
         description="Detect image margins and display preview with margins removed"
     )
+    parser.add_argument("image", help="Path to the image file to process")
     parser.add_argument(
-        "image",
-        help="Path to the image file to process"
+        "--enable-right",
+        "-r",
+        action="store_true",
+        help="Enable right half click processing",
     )
     parser.add_argument(
-        "--enable-right", "-r",
+        "--enable-vertical",
+        "-v",
         action="store_true",
-        help="Enable right half click processing"
-    )
-    parser.add_argument(
-        "--enable-vertical", "-v",
-        action="store_true",
-        help="Enable vertical margin detection (top/bottom)"
+        help="Enable vertical margin detection (top/bottom)",
     )
 
     args = parser.parse_args()

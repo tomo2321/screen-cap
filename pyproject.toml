@@ -9,3 +9,8 @@ dependencies = [
     "pyautogui",
     "pytest",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff",
+]
