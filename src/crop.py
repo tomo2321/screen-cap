@@ -47,6 +47,7 @@ def crop_image(input_path, output_path, start_pos, end_pos, top=None, bottom=Non
     if image is None:
         print(f"Error: Failed to load image: {input_path}")
         sys.exit(1)
+    assert image is not None
 
     height, width = image.shape[:2]
 
@@ -107,6 +108,7 @@ def crop_image(input_path, output_path, start_pos, end_pos, top=None, bottom=Non
     )
 
     # Crop image
+    assert image is not None
     cropped = image[top_idx:bottom_idx, left:right]
 
     # Save cropped image

@@ -105,9 +105,11 @@ class MarginDetector:
         if self.image is None:
             print(f"Error: Failed to load image: {self.image_path}")
             sys.exit(1)
+        assert self.image is not None
 
         # Convert to grayscale for brightness comparison
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        assert self.gray is not None
         print(f"Image loaded: {self.image.shape[1]}x{self.image.shape[0]}")
 
     def find_boundary_right(self, x, y):
@@ -128,6 +130,7 @@ class MarginDetector:
             If pixels 0-99 are white (255) and pixels 100-511 are gray (128),
             clicking at x=50 returns 101 (1-indexed position of pixel at 0-indexed 100)
         """
+        assert self.gray is not None
         height, width = self.gray.shape
 
         # Use the brightness value at click position as reference
@@ -161,6 +164,7 @@ class MarginDetector:
             If pixels 0-99 are gray (128) and pixels 100-511 are white (255),
             clicking at x=450 returns 100 (1-indexed position of pixel at 0-indexed 99)
         """
+        assert self.gray is not None
         # Use the brightness value at click position as reference
         base_value = self.gray[y, x]
 
@@ -194,6 +198,7 @@ class MarginDetector:
 
     def detect_left_margin(self):
         """Detect left margin with dedicated window"""
+        assert self.image is not None
         window_name = "Click image to detect left margin"
         cv2.namedWindow(window_name)
         cv2.setMouseCallback(window_name, self.mouse_callback_left)
@@ -223,6 +228,7 @@ class MarginDetector:
 
         # Auto-detect right margin if enable_right is False
         if not self.enable_right:
+            assert self.gray is not None
             height, width = self.gray.shape
             half_width = width // 2
             distance_from_center = half_width - x
@@ -244,6 +250,7 @@ class MarginDetector:
 
     def detect_right_margin(self):
         """Detect right margin with dedicated window"""
+        assert self.image is not None
         window_name = "Click image to detect right margin"
         cv2.namedWindow(window_name)
         cv2.setMouseCallback(window_name, self.mouse_callback_right)
@@ -288,6 +295,7 @@ class MarginDetector:
         Returns both boundaries as 1-indexed positions representing the first and last
         rows of content pixels.
         """
+        assert self.image is not None
         window_name = "Click image to detect vertical margin"
         cv2.namedWindow(window_name)
         cv2.setMouseCallback(window_name, self.mouse_callback_vertical)
@@ -347,6 +355,7 @@ class MarginDetector:
             Click at row 200 (black content) -> searches up -> finds change at row 99
             Returns 101 (1-indexed position of row 100, first content pixel)
         """
+        assert self.gray is not None
         # Use the brightness value at click position as reference
         base_value = self.gray[y, x]
 
@@ -382,6 +391,7 @@ class MarginDetector:
             Returns 412 (1-indexed position of row 411 + 1, but we want row 411, so returns i)
             Note: Due to 0/1-indexed conversion, returns i which equals 412 in 1-indexed
         """
+        assert self.gray is not None
         height, width = self.gray.shape
 
         # Use the brightness value at click position as reference
@@ -434,6 +444,7 @@ class MarginDetector:
             -> image[:, 100:412] crops pixels 100-411 (0-indexed)
             -> Cropped width = 312 pixels
         """
+        assert self.image is not None
         height, width = self.image.shape[:2]
 
         # Determine crop range (convert to 0-indexed)
