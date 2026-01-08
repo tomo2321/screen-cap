@@ -3,4 +3,7 @@
     "astral-sh.ty",
     "charliermarsh.ruff",
   ],
+  "unwantedRecommendations": [
+    "ms-python.mypy-type-checker",
+  ]
 }
