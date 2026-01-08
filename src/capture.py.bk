@@ -1,0 +1,221 @@
+# type: ignore[unresolved-attribute]
+"""
+Capture screenshots of pages in an application (e.g., PDF viewer) and save them as image files.
+"""
+
+import argparse
+import os
+import platform
+import subprocess
+import time
+from datetime import datetime
+
+import pyautogui as pag
+
+# Import modules based on OS
+current_os = platform.system()
+
+if current_os == "Windows":
+    try:
+        import pygetwindow as gw
+    except ImportError:
+        print("Warning: 'pip install pygetwindow' is required to run on Windows.")
+elif current_os == "Darwin":  # macOS
+    try:
+        import Quartz
+    except ImportError:
+        print(
+            "Warning: 'pip install pyobjc-framework-Quartz' is required to run on macOS."
+        )
+
+MAX_PAGE_NUM = 10000
+pag.PAUSE = 1.5
+
+
+def activate_window_by_name(app_name: str) -> bool:
+    """
+    Detect OS and activate the window by application name
+
+    Args:
+        app_name: Application name (e.g., "Safari", "Preview")
+
+    Returns:
+        bool: True if window activation succeeds
+    """
+    system = platform.system()
+
+    if system == "Windows":
+        if gw is None:
+            print("Error: pygetwindow is not installed.")
+            return False
+        # Windows implementation
+        windows = gw.getWindowsWithTitle(app_name)
+        if windows:
+            win = windows[0]
+            win.activate()  # Bring to front
+            time.sleep(0.5)  # Wait for window to become active
+            return True
+
+    elif system == "Darwin":  # macOS implementation
+        if Quartz is None:
+            print("Error: Quartz is not installed.")
+            return False
+        # Search for app name in window list
+        window_list = Quartz.CGWindowListCopyWindowInfo(
+            Quartz.kCGWindowListOptionAll, Quartz.kCGNullWindowID
+        )
+
+        for window in window_list:
+            owner_name = window.get(Quartz.kCGWindowOwnerName, "")
+            if app_name.lower() in owner_name.lower():
+                # Activate app using AppleScript
+                script = f'tell application "{owner_name}" to activate'
+                subprocess.run(["osascript", "-e", script])
+                time.sleep(0.5)  # Wait for window to become active
+                return True
+
+    else:
+        print(f"Unsupported OS: {system}")
+
+    return False
+
+
+def capture_window_screenshot(window_name: str, save_path: str) -> bool:
+    """
+    Capture screenshot of the specified window
+
+    Args:
+        window_name: Window name (application name)
+        save_path: Save path
+
+    Returns:
+        bool: True if capture succeeds
+    """
+    system = platform.system()
+
+    if system == "Windows":
+        windows = gw.getWindowsWithTitle(window_name)
+        if windows:
+            win = windows[0]
+            win.activate()
+            time.sleep(0.3)
+            # region=(left, top, width, height)
+            screenshot = pag.screenshot(
+                region=(win.left, win.top, win.width, win.height)
+            )
+            screenshot.save(save_path)
+            return True
+
+    elif system == "Darwin":  # macOS implementation
+        window_list = Quartz.CGWindowListCopyWindowInfo(
+            Quartz.kCGWindowListOptionAll,
+            Quartz.kCGNullWindowID,
+        )
+
+        for window in window_list:
+            owner_name = window.get(Quartz.kCGWindowOwnerName, "")
+            if window_name.lower() in owner_name.lower():
+                window_id = window.get(Quartz.kCGWindowNumber)
+                # Capture using screencapture command with Window ID
+                # -l: window_id, -o: no shadow
+                subprocess.run(["screencapture", "-l", str(window_id), "-o", save_path])
+                return True
+
+    else:
+        print(f"Unsupported OS: {system}")
+
+    return False
+
+
+def capture(
+    save_dir,
+    total_page_num: int = MAX_PAGE_NUM,
+    next_page_direction: str = "right",
+    window_name: str | None = None,
+) -> None:
+    """
+    Capture screenshots continuously
+
+    Args:
+        save_dir: Save directory
+        total_page_num: Number of pages to capture
+        next_page_direction: Key to advance to next page (default: "right")
+        window_name: Target window name (if specified, captures that window)
+    """
+    print(f"total page num: {total_page_num}")
+    print(f"save dir: {save_dir}")
+    print(f"target window: {window_name if window_name else 'full screen'}")
+
+    time.sleep(10)
+
+    # If window name is specified, activate it first
+    if window_name:
+        print(f"Activating window: {window_name}")
+        if not activate_window_by_name(window_name):
+            print(
+                f"Warning: Failed to activate '{window_name}'. Proceeding with full screen capture."
+            )
+
+    os.makedirs(save_dir, exist_ok=True)
+    for i in range(total_page_num):
+        save_filepath = f"{save_dir}/{i:04d}.png"
+        print(f"save: {save_filepath}")
+
+        # If window name is specified, capture that window's screenshot
+        if window_name:
+            success = capture_window_screenshot(window_name, save_filepath)
+            if not success:
+                # Fallback to full screen capture if failed
+                print("  -> Falling back to full screen capture")
+                screenshot = pag.screenshot()
+                screenshot.save(save_filepath)
+        else:
+            # If window name is not specified, capture full screen
+            screenshot = pag.screenshot()
+            screenshot.save(save_filepath)
+
+        pag.hotkey(next_page_direction)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Capture screenshots of pages in an application"
+    )
+
+    parser.add_argument(
+        "--save-dir",
+        type=str,
+        default=f"figs/{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}",
+        help="Directory to save screenshots (default: figs/YYYY-MM-DD_HH:MM:SS)",
+    )
+    parser.add_argument(
+        "--total-page-num",
+        type=int,
+        default=MAX_PAGE_NUM,
+        help=f"Number of pages to capture (default: {MAX_PAGE_NUM})",
+    )
+    parser.add_argument(
+        "--next-page-direction",
+        type=str,
+        default="right",
+        help="Key to advance to next page (default: right)",
+    )
+    parser.add_argument(
+        "--window-name",
+        type=str,
+        default=None,
+        help="Target window name (if not specified, captures full screen)",
+    )
+
+    args = parser.parse_args()
+
+    capture(
+        save_dir=args.save_dir,
+        total_page_num=args.total_page_num,
+        next_page_direction=args.next_page_direction,
+        window_name=args.window_name,
+    )
+
+
+if __name__ == "__main__":
+    main()
